@@ -121,8 +121,11 @@ def build_and_save_index():
 
     # 4) Zero-shot embed all passages via get_text_features
     # extract first 1000 passages
-    passage_table = passage_table[:10000]
-    all_texts = [row["text"] for row in passage_table]
+    # save passage table to json file
+    # with open("saved_index/passage_table.json", "w", encoding="utf-8") as f:
+    #     json.dump(passage_table, f, ensure_ascii=False, indent=4)
+
+    all_texts = [row["text"] for row in passage_table][:100]
     
     # Compute embeddings with optimized GPU usage
     text_embeddings = compute_text_embeddings(all_texts, processor, clip_model, device)
