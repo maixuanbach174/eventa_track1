@@ -1,2 +1,3 @@
 dataset/*
+faiss_indices/*
 saved_index/*
