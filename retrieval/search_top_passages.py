@@ -5,7 +5,9 @@ from retrieval.build_index import load_article_index
 import torch
 from transformers import CLIPProcessor, CLIPModel
 import gc
-
+import pandas as pd
+from tqdm import tqdm
+import os
 
 def get_device():
     if torch.cuda.is_available():
@@ -67,7 +69,41 @@ def search_passages_in_article(image_embedding: np.ndarray, article_id: str, top
 if __name__ == "__main__":
     device = get_device()
     processor, model = init_clip_model()
-    image_path = "dataset/database_images/b64507f291c22d96.jpg"
-    image_embedding = embed_image(image_path, device, processor, model)
-    print(image_embedding.shape)
-    print(search_passages_in_article(image_embedding, "30f174bb655d403a", 1))
+    image_dir = "dataset/val/pub_images/"
+    df = pd.read_csv("submission.csv")
+    required_columns = ['query_id', 'article_id_1', 'generated_caption']
+    if not all(col in df.columns for col in required_columns):
+        print("Error: submission.csv missing required columns")
+        exit(1)
+
+    generated_captions = []
+
+    for index, row in tqdm(df.iterrows(), desc="Retrieving passages for caption"):
+        query_id = row['query_id']
+        article_id_1 = row['article_id_1']
+        image_path = f"dataset/val/pub_images/{query_id}.jpg"
+        # if(len(generated_captions) == 10):
+        #     break
+        if not os.path.exists(image_path):
+            print(f"Warning: Image not found for query_id {query_id} at {image_path}")
+            caption = ""
+            generated_captions.append(caption)
+            continue
+        image_embedding = embed_image(image_path, device, processor, model)
+        results = search_passages_in_article(image_embedding, str(article_id_1), top_k=2)
+        if len(results) >= 2:
+            caption = results[0]['text'] + results[1]['text']
+        elif len(results) == 1:
+            print(f"Warning: Only one result found for query_id {query_id}, article_id {article_id_1}")
+            caption = results[0]['text']
+        else:
+            print(f"Warning: No results found for query_id {query_id}, article_id {article_id_1}")
+            caption = ""
+        
+        generated_captions.append(caption)
+    
+    df['generated_caption'] = generated_captions
+    # for i in range(10):
+    #     df['generated_caption'][i] = generated_captions[i]
+    df.to_csv("submission.csv", index=False)
+    print("Updated submission.csv successfully")

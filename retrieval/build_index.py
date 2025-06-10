@@ -110,7 +110,7 @@ if __name__ == "__main__":
         print(f"Loaded index for article 0:")
         print(f"- FAISS index with {index.ntotal} passages")
         print(f"- Stored {len(passages)} passage objects")
-        print(f"- First passage text: {passages[0].get('text', '')[:100]}...")
+        print(f"- First passage text: {passages[0].get('text', '')}...")
         
         # Show available articles
         available = get_available_articles("faiss_indices")
